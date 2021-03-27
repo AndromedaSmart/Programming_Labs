@@ -1,0 +1,37 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+class Num{
+public:
+    float coefficient;
+    int power;
+};
+
+class polynomial{
+public:
+    vector<Num> v;
+    explicit polynomial(const vector<Num> &m): v(m){};
+    polynomial(const polynomial &t) = default;;
+    polynomial& operator=(const polynomial &t){
+        this->v = t.v;
+        return *this;
+    };
+    bool operator==(const polynomial&t) const{
+        if (this->v == t.v)
+            return true;
+        else
+            return false;
+    };
+    bool operator!=(const polynomial&t) const{
+        if (this->v != t.v)
+            return true;
+        else
+            return false;
+    };
+    polynomial& operator+(const polynomial&t){
+        for (auto i : t.v)
+            this->v.push_back(i);
+        return *this;
+    };
+};
