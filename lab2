@@ -131,7 +131,7 @@ ostream& operator<< (ostream &o,const Polynomial& a){
     return o;
 }
 istream& operator>> (istream &in, Polynomial &a){
-    cout << "Please enter sequence of an integers (to quit press q):\n";
+    cout << "Введите последовательность:\n";
     float i, k;
     while(cin >> i && cin>>k) {
         a.v.emplace_back(i, k);
