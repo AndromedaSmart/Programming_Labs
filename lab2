@@ -1,37 +1,145 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
+
 using namespace std;
 
-class Num{
+class Num {
 public:
+    Num()=default;;
+
+    Num(float _coefficient, float _power) : coefficient(_coefficient), power(_power) {};
     float coefficient;
-    int power;
+    float power;
+
+    bool operator==(const Num &t) const {
+        return (this->coefficient == t.coefficient && this->power == t.power);
+    };
+    bool operator!=(const Num &t) const {
+        return (this->coefficient != t.coefficient || this->power != t.power);
+    };
+    bool operator<(const Num &t) const {
+        return (this->power < t.power);
+    };
+
+    bool operator>(const Num &t) const {
+        return (this->power > t.power);
+    };
+
+    ~Num()= default;
 };
 
-class polynomial{
+class Polynomial{
 public:
     vector<Num> v;
-    explicit polynomial(const vector<Num> &m): v(m){};
-    polynomial(const polynomial &t) = default;;
-    polynomial& operator=(const polynomial &t){
-        this->v = t.v;
+
+    explicit Polynomial(const vector<Num> &m): v(m){
+        sort(v.begin(), v.end());
+    };
+
+    Polynomial(const Polynomial &t): v(t.v){
+        sort(v.begin(), v.end());
+    }
+    Polynomial() = default;;
+
+    Polynomial& operator=(const Polynomial &t)= default;;
+
+    bool operator==(const Polynomial&t) const{
+        return (this->v == t.v);
+    };
+
+    bool operator!=(const Polynomial&t) const{
+        return (this->v != t.v);
+    };
+
+    Polynomial operator+(const Polynomial&t) {
+        Polynomial y(*this);
+        for (int i = 0; i < t.v.size(); ++i){
+            if (i < y.v.size())
+                y.v[i].coefficient += t.v[i].coefficient;
+            else
+                y.v.push_back(t.v[i]);
+        }
+        return y;
+    }
+
+    Polynomial operator-(const Polynomial&t) {
+        Polynomial y(*this);
+
+        for (int i = 0; i < t.v.size(); ++i){
+            if (i < y.v.size())
+                y.v[i].coefficient -= t.v[i].coefficient;
+            else
+                y.v.emplace_back(-t.v[i].coefficient, t.v[i].power);
+        }
+        return y;
+    }
+
+    Polynomial& operator+=(const Polynomial&t) {
+        for (int i = 0; i < t.v.size(); ++i){
+            if (i < this->v.size())
+                this->v[i].coefficient += t.v[i].coefficient;
+            else
+                this->v.push_back(t.v[i]);
+        }
+        return *this;
+    }
+
+    Polynomial& operator-=(const Polynomial&t){
+        for (int i = 0; i < t.v.size(); ++i){
+            if (i < this->v.size())
+                this->v[i].coefficient -= t.v[i].coefficient;
+            else
+                this->v.emplace_back(-t.v[i].coefficient, t.v[i].power);
+        }
         return *this;
     };
-    bool operator==(const polynomial&t) const{
-        if (this->v == t.v)
-            return true;
-        else
-            return false;
-    };
-    bool operator!=(const polynomial&t) const{
-        if (this->v != t.v)
-            return true;
-        else
-            return false;
-    };
-    polynomial& operator+(const polynomial&t){
-        for (auto i : t.v)
-            this->v.push_back(i);
+
+    Polynomial operator*(const float t) {
+        Polynomial y(*this);
+        for (auto & i : y.v)
+            i.coefficient *= t;
+        return y;
+    }
+
+    Polynomial operator/(const float t) {
+        Polynomial y(*this);
+        for (auto & i : y.v)
+            i.coefficient /= t;
+        return y;
+    }
+
+    Polynomial& operator*=(const float t) {
+        for (auto & i : this->v)
+            i.coefficient *= t;
+        return *this;
+    }
+
+    Polynomial& operator/=(const float t){
+        for (auto & i : this->v)
+            i.coefficient /= t;
         return *this;
     };
+    float& operator[](int t){
+        return this->v[t].coefficient;
+    }
+    ~Polynomial()= default;
 };
+ostream& operator<< (ostream &o,const Polynomial& a){
+    for(auto i:a.v)
+        o << i.coefficient << ' ' << i.power << endl;
+    return o;
+}
+istream& operator>> (istream &in, Polynomial &a){
+    cout << "Please enter sequence of an integers (to quit press q):\n";
+    float i, k;
+    while(cin >> i && cin>>k) {
+        a.v.emplace_back(i, k);
+    }
+    sort(a.v.begin(), a.v.end());
+    return in;
+}
+int main() {
+    Polynomial polynomial(vector<Num> {{1,2}, {2,3}});
+    cout << polynomial;
+}
