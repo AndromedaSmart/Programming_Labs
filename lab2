@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 
 using namespace std;
 
@@ -8,7 +9,7 @@ class Num {
 public:
     Num()=default;;
 
-    Num(float _coefficient, float _power) : coefficient(_coefficient), power(_power) {};
+    Num(int _coefficient, int _power) : coefficient(_coefficient), power(_power) {};
     float coefficient;
     float power;
 
@@ -52,30 +53,21 @@ public:
         return (this->v != t.v);
     };
 
-    Polynomial operator+(const Polynomial&t) {
+    Polynomial operator+(const Polynomial& t) const{
         Polynomial y(*this);
-        for (int i = 0; i < t.v.size(); ++i){
-            if (i < y.v.size())
-                y.v[i].coefficient += t.v[i].coefficient;
-            else
-                y.v.push_back(t.v[i]);
-        }
+        t = y(*this);
+        
         return y;
     }
 
-    Polynomial operator-(const Polynomial&t) {
+    Polynomial operator-(const Polynomial&t) const{
         Polynomial y(*this);
-
-        for (int i = 0; i < t.v.size(); ++i){
-            if (i < y.v.size())
-                y.v[i].coefficient -= t.v[i].coefficient;
-            else
-                y.v.emplace_back(-t.v[i].coefficient, t.v[i].power);
-        }
+        t = y(*this);
+        
         return y;
     }
 
-    Polynomial& operator+=(const Polynomial&t) {
+    Polynomial& operator+=(const Polynomial&t) const{
         for (int i = 0; i < t.v.size(); ++i){
             if (i < this->v.size())
                 this->v[i].coefficient += t.v[i].coefficient;
@@ -85,7 +77,7 @@ public:
         return *this;
     }
 
-    Polynomial& operator-=(const Polynomial&t){
+    Polynomial& operator-=(const Polynomial&t) const{
         for (int i = 0; i < t.v.size(); ++i){
             if (i < this->v.size())
                 this->v[i].coefficient -= t.v[i].coefficient;
@@ -95,35 +87,48 @@ public:
         return *this;
     };
 
-    Polynomial operator*(const float t) {
+    Polynomial operator*(const float t) const{
         Polynomial y(*this);
         for (auto & i : y.v)
             i.coefficient *= t;
         return y;
     }
 
-    Polynomial operator/(const float t) {
+    Polynomial operator/(const float t) const{
         Polynomial y(*this);
         for (auto & i : y.v)
             i.coefficient /= t;
         return y;
     }
 
-    Polynomial& operator*=(const float t) {
+    Polynomial& operator*=(const float t) const{
         for (auto & i : this->v)
             i.coefficient *= t;
         return *this;
     }
 
-    Polynomial& operator/=(const float t){
+    Polynomial& operator/=(const float t) const{
         for (auto & i : this->v)
             i.coefficient /= t;
         return *this;
     };
-    float& operator[](int t){
+    float & operator[](const int t) const{
         return this->v[t].coefficient;
     }
+    friend void operator *= (Polynomial& pol1, Polynomial& pol2);
+
     ~Polynomial()= default;
+
+    void operator*=(const Polynomial& pol1, const Polynomial& pol2) const {
+        vector<Num> v1;
+        for (auto i : pol1.v) {
+            for (auto j : pol2.v) {
+                v1[i.power + j.power].coefficient += pol1.v[i.power].coefficient * pol2.v[j.power].coefficient;
+                double x = pol1.v[i.power].coefficient * pol2.v[j.power].coefficient;
+            }
+        }
+        Polynomial polnew(v1);
+    }
 };
 ostream& operator<< (ostream &o,const Polynomial& a){
     for(auto i:a.v)
