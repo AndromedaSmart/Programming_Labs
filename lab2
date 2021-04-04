@@ -1,150 +1,124 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <unordered_map>
-
+#include <bits/stdc++.h>
 using namespace std;
 
-class Num {
+class Polynom{
 public:
-    Num()=default;;
+    unordered_map <int, float> polynom;
+    Polynom()= default;
+    Polynom(unordered_map <int, float> vect): polynom(std::move(vect)){}
+    Polynom (const Polynom& get)= default;
 
-    Num(int _coefficient, int _power) : coefficient(_coefficient), power(_power) {};
-    float coefficient;
-    float power;
+    Polynom& operator = (const Polynom& get){
+        if (&get == this)
+            return *this;
+        polynom = get.polynom;
+        return *this;
+    }
 
-    bool operator==(const Num &t) const {
-        return (this->coefficient == t.coefficient && this->power == t.power);
-    };
-    bool operator!=(const Num &t) const {
-        return (this->coefficient != t.coefficient || this->power != t.power);
-    };
-    bool operator<(const Num &t) const {
-        return (this->power < t.power);
+    bool operator == (const Polynom& pol2) const{
+        return polynom == pol2.polynom;
+    }
+
+    bool operator != (const Polynom& pol2) const{
+        return !(polynom == pol2.polynom);
+    }
+
+    const Polynom& operator+() const{
+        return *this;
+    }
+
+    Polynom operator - (Polynom get){
+        for (auto i: get.polynom)
+            get.polynom[i.first] = -get.polynom[i.first];
+        return get;
+    }
+    void operator *= (Polynom& polynom){
+        *this = *this * polynom;
+    }
+    Polynom operator + (Polynom& polynom){
+        for (auto i: polynom.polynom)
+            this->polynom[i.first] += polynom.polynom[i.first];
+        return *this;
+    }
+    Polynom operator - (Polynom& polynom){
+        for (auto i: polynom.polynom)
+            this->polynom[i.first] -= polynom.polynom[i.first];
+        return *this;
+    }
+
+    void operator += (Polynom& polynom){
+        *this = *this + polynom;
+    }
+
+    void operator -= (Polynom& polynom){
+        *this = *this - polynom;
+    }
+
+    Polynom operator*(const float t) {
+        Polynom y(*this);
+        for (auto & i : y.polynom)
+            i.second *= t;
+        return y;
+    }
+
+    Polynom operator/(const float t) {
+        Polynom y(*this);
+        for (auto & i : y.polynom)
+            i.second /= t;
+        return y;
+    }
+
+    Polynom& operator*=(const float t) {
+        for (auto & i : this->polynom)
+            i.second *= t;
+        return *this;
+    }
+
+    Polynom& operator/=(const float t){
+        for (auto & i : this->polynom)
+            i.second /= t;
+        return *this;
     };
 
-    bool operator>(const Num &t) const {
-        return (this->power > t.power);
-    };
-
-    ~Num()= default;
+    float operator [] (int i){
+        return polynom[i];
+    }
+    friend Polynom operator * (Polynom &polynom1, Polynom &polynom2);
+    ~Polynom()= default;
 };
 
-class Polynomial{
-public:
-    vector<Num> v;
-
-    explicit Polynomial(const vector<Num> &m): v(m){
-        sort(v.begin(), v.end());
-    };
-
-    Polynomial(const Polynomial &t): v(t.v){
-        sort(v.begin(), v.end());
-    }
-    Polynomial() = default;;
-
-    Polynomial& operator=(const Polynomial &t)= default;;
-
-    bool operator==(const Polynomial&t) const{
-        return (this->v == t.v);
-    };
-
-    bool operator!=(const Polynomial&t) const{
-        return (this->v != t.v);
-    };
-
-    Polynomial operator+(const Polynomial& t) const{
-        Polynomial y(*this);
-        t = y(*this);
-        
-        return y;
-    }
-
-    Polynomial operator-(const Polynomial&t) const{
-        Polynomial y(*this);
-        t = y(*this);
-        
-        return y;
-    }
-
-    Polynomial& operator+=(const Polynomial&t) const{
-        for (int i = 0; i < t.v.size(); ++i){
-            if (i < this->v.size())
-                this->v[i].coefficient += t.v[i].coefficient;
-            else
-                this->v.push_back(t.v[i]);
-        }
-        return *this;
-    }
-
-    Polynomial& operator-=(const Polynomial&t) const{
-        for (int i = 0; i < t.v.size(); ++i){
-            if (i < this->v.size())
-                this->v[i].coefficient -= t.v[i].coefficient;
-            else
-                this->v.emplace_back(-t.v[i].coefficient, t.v[i].power);
-        }
-        return *this;
-    };
-
-    Polynomial operator*(const float t) const{
-        Polynomial y(*this);
-        for (auto & i : y.v)
-            i.coefficient *= t;
-        return y;
-    }
-
-    Polynomial operator/(const float t) const{
-        Polynomial y(*this);
-        for (auto & i : y.v)
-            i.coefficient /= t;
-        return y;
-    }
-
-    Polynomial& operator*=(const float t) const{
-        for (auto & i : this->v)
-            i.coefficient *= t;
-        return *this;
-    }
-
-    Polynomial& operator/=(const float t) const{
-        for (auto & i : this->v)
-            i.coefficient /= t;
-        return *this;
-    };
-    float & operator[](const int t) const{
-        return this->v[t].coefficient;
-    }
-    friend void operator *= (Polynomial& pol1, Polynomial& pol2);
-
-    ~Polynomial()= default;
-
-    void operator*=(const Polynomial& pol1, const Polynomial& pol2) const {
-        vector<Num> v1;
-        for (auto i : pol1.v) {
-            for (auto j : pol2.v) {
-                v1[i.power + j.power].coefficient += pol1.v[i.power].coefficient * pol2.v[j.power].coefficient;
-                double x = pol1.v[i.power].coefficient * pol2.v[j.power].coefficient;
-            }
-        }
-        Polynomial polnew(v1);
-    }
-};
-ostream& operator<< (ostream &o,const Polynomial& a){
-    for(auto i:a.v)
-        o << i.coefficient << ' ' << i.power << endl;
-    return o;
+Polynom operator * (Polynom& polynom1, Polynom& polynom2){
+    unordered_map <int, float> _polynom;
+    for (auto i: polynom1.polynom)
+        for (auto j: polynom2.polynom)
+            _polynom[i.first + j.first] += polynom1.polynom[i.first] * polynom2.polynom[j.first];
+    Polynom polynom_new(_polynom);
+    return polynom_new;
 }
-istream& operator>> (istream &in, Polynomial &a){
-    cout << "Введите последовательность:\n";
-    float i, k;
-    while(cin >> i && cin>>k) {
-        a.v.emplace_back(i, k);
+
+ostream& operator << (ostream& stream, Polynom& pol)
+{
+    for (auto i: pol.polynom){
+        if (pol.polynom[i.first] != 0)
+        {
+            if (pol.polynom[i.first] < 0)
+                stream << pol.polynom[i.first] << "X^" << i.first;
+            else
+                stream << "+" << pol.polynom[i.first] << "X^" << i.first;
+        }
     }
-    sort(a.v.begin(), a.v.end());
-    return in;
+    cout <<endl;
+    return stream;
 }
-int main() {
-    Polynomial polynomial(vector<Num> {{1,2}, {2,3}});
-    cout << polynomial;
+
+istream& operator >> (istream& stream, Polynom& pol) {
+    int n;
+    stream >> n;
+    double num;
+    int pow;
+    for (int i = 0; i < n; i++) {
+        stream >> num >> pow;
+        pol.polynom[pow] = num;
+    }
+    return stream;
 }
