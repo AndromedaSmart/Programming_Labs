@@ -51,7 +51,9 @@ public:
     }
 
     void operator -= (Polynom& polynom){
-        *this = *this - polynom;
+        for (auto i: polynom.polynom)
+            polynom.polynom[i.first] = -polynom.polynom[i.first];
+        *this = *this +polynom;
     }
 
     Polynom operator*(const float t) {
