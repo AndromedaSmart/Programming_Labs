@@ -1,0 +1,138 @@
+#include "C:\Programming\pugixml-1.11\src\pugixml.cpp"
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cmath>
+#include <unordered_map>
+
+using namespace std;
+
+struct Street {
+	string name;
+	int n_of_stops;
+};
+
+struct Route {
+	string name;
+};
+
+struct RouteWithStops : public Route {
+	int stops;
+};
+
+struct RouteWithDist : public Route {
+	double dist;
+};
+
+struct RouteInfo {
+	pair <double, double> last_stop_coord;
+	double dist;
+	int stops;
+};
+
+class Analitic {
+public:
+	Analitic();
+
+	void handle_stop(const TransportStop & stop);
+
+	Street Mstreet;
+	unordered_map<string, RouteWithStops> max_routes_by_stops;
+	unordered_map<string, RouteWithDist> max_routes_by_dist;
+
+private:
+	void handle_street_data(const string& name);
+	unordered_map<string, int> streets_count;
+
+	void handle_route_data(const string& type_of_vehicle,
+		const string& route_name,
+		const pair<double, double>& coord);
+	unordered_map<string, RouteInfo> routes_info;
+};
+
+
+Analitic::Analitic() {
+
+	Mstreet.stops = 0;
+}
+
+void Analitic::handle_stop(const TransportStop & stop) {
+	handle_street_data(stop.street);
+	for (auto& route : stop.routes)
+		handle_route_data(stop.type_of_vehicle, route, stop.coord);
+}
+
+void Analitic::handle_street_data(const string& name) {
+	if (name.size() == 0)
+		return;
+	streets_count[name]++;
+	if (streets_count[name] > Mstreet.n_of_stops) {
+		Mstreet.name = name;
+		Mstreet.n_of_stops = streets_count[name];
+	}
+}
+
+using coord = pair<double, double>;
+
+inline double sqr(double num) {
+	return pow(num, 2);
+}
+
+static double dist(const coord& c1, const coord& c2) {
+	double dx = c1.first - c2.first;
+	double dy = c2.second - c2.second;
+	return sqrt(sqr(dx) + sqr(dy));
+}
+
+void Analitic::handle_route_data(const string& type_of_vehicle,
+	const string& route_name,
+	const pair<double, double>& coord) {
+	RouteInfo& route = routes_info[type_of_vehicle + route_name];
+	route.stops++;
+	RouteWithStops& max_route_by_stops = max_routes_by_stops[type_of_vehicle];
+	if (max_route_by_stops.stops < route.stops) {
+		max_route_by_stops.name = route_name;
+		max_route_by_stops.stops = route.stops;
+	}
+	route.dist += dist(route.last_stop_coord, coord);
+	route.last_stop_coord = coord;
+	RouteWithDist& max_route_by_dist = max_routes_by_dist[type_of_vehicle];
+	if (max_route_by_dist.dist < route.dist) {
+		max_route_by_dist.name = route_name;
+		max_route_by_dist.dist = route.dist;
+	}
+}
+
+int main() {
+
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_file("C:\Programming\data.xml");
+
+	vector<string> Vehicles = {
+	"Trolleybus",
+	"Bus",
+	"Tram",
+	};
+
+		Analitic analyst;
+		for (const TransportStop & stop : dataset)
+			analyst.handle_stop(stop);
+		cout << "Streets with max number:" << endl;
+		cout << analyst.Mstreet.name << endl;;
+		cout << "Stops numbers:" << endl;
+		for (auto & type_of_transport : Vehicles) {
+			cout << type_of_transport << ": ";
+			cout << analyst.max_routes_by_stops[type_of_transport].name;
+			cout << endl;
+		}
+		cout << "Maximum of distantions - " << endl;
+		for (auto & type_of_transport : Vehicles) {
+			cout << type_of_transport << ": ";
+			cout << analyst.max_routes_by_dist[type_of_transport].name;
+			cout << endl;
+		}
+		return 0;
+
+	
+	}
