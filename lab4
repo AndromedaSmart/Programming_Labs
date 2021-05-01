@@ -1,0 +1,71 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+void all_of(int x, int y) {
+	int n;
+	for (int i = 0; i < n; i++) {
+		if () 
+	
+	
+			return true;
+	};
+
+	else {
+	return false
+};
+
+vector <int> v1;
+for (int i = 0; i < n; i++) {
+	v1.push_back(i);
+	if () {
+		v1.push_back(i);
+	}
+};
+
+vector<int>::iterator result;
+result = adjacent_find(v1.begin(), v1.end());
+if (result == v1.end()) {
+	return true
+};
+
+else {
+	return false
+};
+
+void find_backward() {
+	for (int i = 0; i < n; i++) {
+		if (binary_search(nums + end, i)) {
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+};
+
+void is_sorted() {
+
+	bool is_sorted(iterator start, iterator end);
+	bool is_sorted(iterator start, iterator end, StrictWeakOrdering
+		cmp);
+};
+
+void find_not() {
+	if 
+};
+
+void one_of() {
+
+	iterator one_of(iterator one);
+	if (n != i ) {
+		return true
+	}
+
+	else {
+		return false
+	}
+};
