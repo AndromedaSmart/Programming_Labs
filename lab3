@@ -1,0 +1,402 @@
+#include <iostream>
+#include <utility>
+#include <vector>
+#include <algorithm>
+#include <sstream>
+#include <map>
+#include <set>
+#include <cmath>
+#include "C:\Programming\pugixml-1.11\src\pugixml.cpp"
+#include <math.h>
+
+#define M_PI 3.14
+
+#define CREATE_ELEM Station_of_Transport(std::stoi(iter.child_value("Num")), iter.child_value("Type_vechicle"), \
+iter.child_value("Type_object"), iter.child_value("Name_of_Stop"), iter.child_value("Off_name"), routes, it_locations, coordinates)
+
+#define to_radians (M_PI / 180)
+
+
+using namespace std;
+
+static map<string, float> TramRsize, BusRsize, TrolleybusRsize; // пары "название маршрута" / длина маршрута
+static map<string, int> tram_routes, bus_routes, trolleybus_routes; // пары "название маршрута" / количество упоминаний (по отдельным транспортам)
+static map<string, int> Locations; // пары "название локации" / количество упоминаний
+static set<string> Routes_names; // названия всех маршрутов
+
+class Station_of_Transport {
+private:
+    int number;
+    string type_of_vehicle, object_type, name_stopping, the_official_name;
+    vector<string> location, routes;
+    pair<float, float> coordinates;
+
+public:
+    inline explicit Station_of_Transport(int number, vector<string> routes, string type_of_vehicle, string object_type, string the_official_name,
+        string name_stopping, vector<string> location, pair<float, float> coord)
+        : type_of_vehicle(move(type_of_vehicle)), number(number), routes(move(routes)),
+        object_type(move(object_type)), the_official_name(move(the_official_name)),
+        name_stopping(move(name_stopping)), location(move(location)), coordinates(move(coord)) {}
+
+    inline string get_type_of_vehicle() const { return this->type_of_vehicle; }
+
+    inline float get_coord_x() const 
+    { return this->coordinates.first; }
+
+    inline float get_coord_y() const 
+    { return this->coordinates.second; }
+
+    inline int routes_size() const 
+    { return this->routes.size(); }
+
+    inline string operator[](const int index) const 
+    { return this->routes[index]; }
+};
+
+class Routes {
+public:
+    string route;
+    vector<Station_of_Transport> Tram, Bus, Trolleybus;
+};
+
+// структура для сортировки элементов в мапе (функтор)
+struct comparator {
+
+    template<typename T>
+
+    bool operator()(const T& left, const T& right) const {
+        if (left.second != right.second)
+            return left.second > right.second;
+        return left.first > right.first;
+    }
+};
+
+void print_top(map<string, int>& old_map, int count) {
+    set<pair<string, int>, comparator> sorted(old_map.begin(), old_map.end());
+    int const_ = count;
+
+    for (auto& it : sorted)
+        (count-- > 0) ? cout << const_ - count << ") " << it.first << " ---> " << it.second << " шт.\n" : cout;
+}
+
+double find_dist(const Station_of_Transport & a, const Station_of_Transport & b) {
+    double Lation1 = a.get_coord_x() * to_radians;
+    double Long1 = a.get_coord_y() * to_radians;
+    double Lation2 = b.get_coord_x() * to_radians;
+    double Long2 = b.get_coord_y() * to_radians;
+
+    double LongD = Long2 - Long1;
+    double LatD = Lation2 - Lation1;
+
+    double Distation = pow(sin(LatD / 2), 2) +
+        cos(Lation1) * cos(Lation2) *
+        pow(sin(LongD / 2), 2);
+
+    int earth_radius_km = 6371;
+
+    Distation = 2 * asin(sqrt(Distation)) * earth_radius_km;
+
+    return Distation;
+}
+
+void parse_pair(const string & String1, string & String2, string & String3) {
+    string separator = ",";
+
+    auto start = 0;
+    auto end = String1.find(separator);
+    while (end != -1) {
+        String2 = String1.substr(start, end - start);
+        start = end + separator.length();
+        end = String1.find(separator, start);
+    }
+
+    String3 = String1.substr(start, end);
+}
+
+inline void make_str_correct(string Temp, string & Current) {
+    Temp += Current;
+    Current = Temp;
+}
+
+string make_location_correct(string & String) {
+    vector <string> errors{ "ул.", " ул.", " УЛ.", " ш.", " Ш.", " шоссе", " ШОССЕ", " пер.", " ПЕР.", " переулок",
+                          " ПЕРЕУЛОК", " улица", "улица", " УЛИЦА", " бул", " БУЛ", " бульвар", " БУЛЬВАР", " пр",
+                          " ПР", " проспект", " ПРОСПЕКТ", "пл. ", "площадь ", " площадь", " пл.", "пр. ", "проспект ",
+                          "проспект", "ш. ", "шоссе ", "наб. ", "набережная ", "наб.", " наб", " дор", "дор. ",
+                          " дорога", " набережная", " аллея", " мост" };
+
+    for (auto const & elem : errors)
+        if (String.find(elem) != -1) {
+            unsigned long first = String.find(elem);
+            unsigned long second = first + elem.size();
+            String.erase(first, second);
+
+            if (String[String.size() - 1] == ' ')
+                while (String[String.size() - 1] == ' ')
+                    String.erase(String.end() - 1);
+            if (String[0] == ' ')
+                while (String[0] == ' ')
+                    String.erase(String.begin());
+
+            if (elem == "ул." || elem == " ул." || elem == " УЛ." || elem == " улица" || elem == "улица" || elem == " УЛИЦА")
+                make_str_correct("улица ", String);
+
+            else if (elem == " ш." || elem == " Ш." || elem == " шоссе" || elem == " ШОССЕ" || elem == "ш. " || elem == "шоссе ")
+                make_str_correct("шоссе ", String);
+
+            else if (elem == " пер." || elem == " ПЕР." || elem == " переулок" || elem == " ПЕРЕУЛОК")
+                make_str_correct("переулок ", String);
+
+            else if (elem == " бул" || elem == " БУЛ" || elem == " бульвар" || elem == " БУЛЬВАР")
+                make_str_correct("бульвар ", String);
+
+            else if (elem == " пр" || elem == " ПР" || elem == " проспект" || elem == " ПРОСПЕКТ" || elem == "пр. " || elem == "проспект " || elem == "проспект")
+                make_str_correct("проспект ", String);
+
+            else if (elem == "пл. " || elem == "площадь " || elem == " площадь" || elem == " пл.")
+                make_str_correct("площадь ", String);
+
+            else if (elem == "наб. " || elem == "набережная " || elem == "наб." || elem == " набережная" || elem == " наб")
+                make_str_correct("набережная ", String);
+
+            else if (elem == " дор" || elem == " дорога" || elem == "дор. ")
+                make_str_correct("дорога ", String);
+
+            else if (elem == " аллея")
+                make_str_correct("аллея ", String);
+
+            else if (elem == " мост")
+                make_str_correct("мост ", String);
+
+            break;
+        }
+
+    return String;
+}
+
+void sum_repeated_locations() {
+    map <string, int> Tempp = Locations;
+    map <string, int> NewLoc;
+    vector <string> Names{ "шоссе ", "улица ", "мост ", "дорога ", "набережная ", "переулок ", "площадь ", "проспект " };
+
+    for (auto & element : Locations) {
+        bool is_changed = false;
+        string String_Temp = element.first;
+        for (auto & name : Names) {
+            make_str_correct(name, String_Temp);
+            if (Tempp[String_Temp] != 0) {
+                NewLoc[String_Temp] = Locations[element.first] + Locations[String_Temp];
+                is_changed = true;
+                break;
+            }
+            String_Temp = element.first;
+        }
+
+        if (!is_changed)
+            NewLoc[element.first] = Locations[element.first];
+    }
+
+    Locations = NewLoc;
+}
+
+void parse_file(vector <Station_of_Transport>& el, map<string, Routes>& Mroutes, set<string>& name_routes) {
+    pugi::xml_document doc;
+    doc.load_file("data.xml");
+    pugi::xml_node data = doc.child("dataset");
+
+    for (pugi::xml_node iter = data.child("transport_station"); iter; iter = iter.next_sibling("transport_station")) {
+
+        //работа с координатами
+        string string_1, string_2;
+        parse_pair(iter.child_value("coordinates"), string_1, string_2);
+        float Coordination_1 = stof(string_1), Coordination_2 = stof(string_2);
+        pair<float, float> coordinates = make_pair(Coordination_1, Coordination_2);
+
+        //работа с маршрутами
+        string_1 = string_2 = "";
+        string routes_str = iter.child_value("routes"), Segment;
+        vector<string> routes;
+
+        stringstream temp_route_string(routes_str);
+        if (count(routes_str.begin(), routes_str.end(), ',')) {
+            while (getline(temp_route_string, Segment, ','))
+                routes.push_back(Segment);
+        }
+        else
+            while (getline(temp_route_string, Segment, '.'))
+                routes.push_back(Segment);
+
+        //работа с локацией
+        string_1 = string_2 = "";
+        string location_string = iter.child_value("location");
+        vector<string> it_locations;
+
+        stringstream Locationtempstring(location_string);
+        if (count(location_string.begin(), location_string.end(), ',') && !location_string.empty()) {
+            while (getline(Locationtempstring, Segment, ',')) {
+                if (Segment[0] == ' ')
+                    Segment.erase(Segment.begin());
+                it_locations.push_back(make_location_correct(Segment));
+                Locations[make_location_correct(Segment)] += 1;
+            }
+        }
+        else if (!location_string.empty()) {
+            it_locations.push_back(make_location_correct(location_string));
+            Locations[make_location_correct(location_string)] += 1;
+        }
+
+        el.emplace_back(CREATE_ELEM);
+
+        if (!strcmp(iter.child_value("typeofvehicle"), "Трамвай"))
+            for (auto const& elem : routes) {
+                Mroutes[elem].Tram.emplace_back(CREATE_ELEM);
+                Mroutes[elem].route = elem;
+                name_routes.insert(elem);
+            }
+
+        else if (!strcmp(iter.child_value("type_of_vehicle"), "Автобус"))
+            for (auto const& Element : routes) {
+                Mroutes[Element].Bus.emplace_back(CREATE_ELEM);
+                Mroutes[Element].route = Element;
+                name_routes.insert(Element);
+            }
+
+        else if (!strcmp(iter.child_value("type_of_vehicle"), "Троллейбус"))
+            for (auto const& element : routes) {
+                Mroutes[element].Trolleybus.emplace_back(CREATE_ELEM);
+                Mroutes[element].route = element;
+                name_routes.insert(element);
+            }
+    }
+
+    sum_repeated_locations();
+}
+
+void set_routes(vector <Station_of_Transport> & stations) {
+
+    for (auto const& elem : stations) {
+        if (elem.get_type_of_vehicle() == "Трамвай")
+            for (int i = 0; i < elem.routes_size(); ++i)
+                tram_routes[elem[i]] += 1;
+
+        else if (elem.get_type_of_vehicle() == "Автобус")
+            for (int i = 0; i < elem.routes_size(); ++i)
+                bus_routes[elem[i]] += 1;
+
+        else if (elem.get_type_of_vehicle() == "Троллейбус")
+            for (int i = 0; i < elem.routes_size(); ++i)
+                trolleybus_routes[elem[i]] += 1;
+    }
+}
+
+void calculate_count_routes(string& BTR, string & BBR, string & BTRR) {
+    int MTR = 0, MBR = 0, MTRR = 0; // максимальное количество остановок
+    for (auto const& elem : tram_routes)
+        if (elem.second > MTR) {
+            MTR = elem.second;
+            BTR = elem.first;
+        }
+
+    for (auto const& elem : bus_routes)
+        if (elem.second > MBR) {
+            MBR = elem.second;
+            BBR = elem.first;
+        }
+
+    for (auto const& elem : trolleybus_routes)
+        if (elem.second > MTRR) {
+            MTRR = elem.second;
+            BTRR = elem.first;
+        }
+
+    cout << "\n";
+    cout << "Наибольшее количество остановок у трамвая равно: " << MTR << " шт. Номер маршрута "
+        << BTR
+        << "\n";
+    cout << "Наибольшее количество остановок у автобуса равно: " << MBR << " шт. Номер маршрута "
+        << BBR
+        << "\n";
+    cout << "Наибольшее количество остановок у троллейбуса равно: " << MTRR << " шт. Номер маршрута "
+        << BTRR << "\n";
+}
+
+void set_distances(map<string, Routes>& routes) {
+    for (auto const & name : Routes_names) {
+        if (routes[name].Tram.size() > 1)
+            for (int i = 0; i < routes[name].Tram.size() - 1; ++i)
+                TramRsize[routes[name].route] += find_dist(routes[name].Tram[i], routes[name].Tram[i + 1]);
+
+        if (routes[name].Bus.size() > 1)
+            for (int i = 0; i < routes[name].Bus.size() - 1; ++i)
+                BusRsize[routes[name].route] += find_dist(routes[name].Bus[i], routes[name].Bus[i + 1]);
+
+        if (routes[name].Trolleybus.size() > 1)
+            for (int i = 0; i < routes[name].Trolleybus.size() - 1; ++i)
+                TrolleybusRsize[routes[name].route] += find_dist(routes[name].Trolleybus[i], routes[name].Trolleybus[i + 1]);
+    }
+}
+
+void find_longest_route(string& LongTR, string& LongBusR, string& LongTrolleybusR) {
+    double distation_longest_tram_route = 0, distation_longest_bus_route = 0, distation_longest_trolleybus_route = 0; // счётчики длины этих самых маршрутов
+
+    for (auto const & elem : TramRsize)
+        if (elem.second > distation_longest_tram_route) {
+            distation_longest_tram_route = elem.second;
+            LongTR = elem.first;
+        }
+
+    for (auto const & elem : BusRsize)
+        if (elem.second > distation_longest_bus_route) {
+            distation_longest_bus_route = elem.second;
+            LongBusR = elem.first;
+        }
+
+    for (auto const & elem : TrolleybusRsize)
+        if (elem.second > distation_longest_trolleybus_route) {
+            distation_longest_trolleybus_route = elem.second;
+            LongTrolleybusR = elem.first;
+        }
+
+    cout << "\n";
+    cout << "Наиболее длиный маршрут трамвая: " << LongTR << "\n";
+    cout << "Наиболее длиный маршрут автобуса: " << LongBusR << "\n";
+    cout << "Наиболее длиный маршрут троллейбуса: " << LongTrolleybusR << "\n";
+}
+
+void find_largest_street(string& Lstreet) {
+    int Mstops = 0; // счётчик остановок
+
+    for (auto const & elem : Locations)
+        if (elem.second > Mstops) {
+            Mstops = elem.second;
+            Lstreet = elem.first;
+        }
+
+    cout << "\n" << "Наибольшее количество остановок на \"" << Lstreet << "\" равно " << Mstops << " шт.\n";
+}
+
+int main() {
+    vector <Station_of_Transport> Stations; // вектор со всеми станциями, в каждой из которых хранится вся информация о ней
+    map<string, Routes> Routes; // пары "название маршрута" / вектора транспортов с такими маршрутами
+
+    parse_file(Stations, Routes, Routes_names); // парсинг файла
+
+    set_routes(Stations); // записываем в контейнеры транспортов их маршруты
+
+    string BigTramR, BigBusR, BigTrolleyBusR; // названия маршрутов с наибольшим количеством остановок
+    calculate_count_routes(BigTramR, BigBusR, BigTrolleyBusR); // высчитываем количество маршрутов
+
+    set_distances(Routes); // устанавливаем длины маршрутов
+
+    string LongTR, LongBusR, LongTrolleybusR; // названия самых длиных маршрутов
+    find_longest_route(LongTR, LongBusR, LongTrolleybusR); // находим самый длинный маршрут
+
+    string largest_street; // улица с наибольшим количеством остановок
+    find_largest_street(largest_street); // находим улицу с наибольшим количеством остановок
+
+    int n = 10;
+    cout << "\n Топ " << n << "локаций по количеству остановок: \n";
+    print_top(Locations, n);
+
+    return 0;
+}
