@@ -1,71 +1,159 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
 
 using namespace std;
 
-void all_of(int x, int y) {
-	int n;
-	for (int i = 0; i < n; i++) {
-		if () 
-	
-	
-			return true;
-	};
+template <class Iterator, class tmp>
+bool all_of(Iterator Start, Iterator End, tmp rdv) {
 
-	else {
-	return false
-};
-
-vector <int> v1;
-for (int i = 0; i < n; i++) {
-	v1.push_back(i);
-	if () {
-		v1.push_back(i);
-	}
-};
-
-vector<int>::iterator result;
-result = adjacent_find(v1.begin(), v1.end());
-if (result == v1.end()) {
-	return true
-};
-
-else {
-	return false
-};
-
-void find_backward() {
-	for (int i = 0; i < n; i++) {
-		if (binary_search(nums + end, i)) {
-			return true;
+	while (Start != End) {
+		if (!rdv(*Start)) {
+			return false;
+			break;
 		}
-		else
-		{
+		++Start;
+
+	}
+	
+	return true;
+}
+
+template <class Iterator, class tmp>
+bool any_of(Iterator Start, Iterator End, tmp rdv) {
+
+	while (Start != End) {
+		if (!rdv(*Start)) {
+			return false;
+			break;
+		}
+		++Start;
+
+	}
+
+	return true;
+}
+
+template <class Iterator, class tmp>
+bool none_of(Iterator Start, Iterator End, tmp rdv) {
+
+	while (Start != End) {
+		if (!rdv(*Start)) {
+			return false;
+			break;
+		}
+		++Start;
+
+	}
+
+	return true;
+}
+
+template <class Iterator, class tmp>
+bool one_of(Iterator Start, Iterator End, tmp rdv) {
+
+	int a = 0;
+
+	while (Start != End) {
+		if (!rdv(*Start)) {
+			return true;
+			a++;
+		}
+		if (a > 1) {
+			return false;
+			break;
+		}
+		Start++;
+	}
+
+	return false;
+}
+
+template <class Iterator, class tmp = Low<>>
+bool is_sorted(Iterator Start, Iterator End, tmp rdv = tmp()) {
+	auto abg = *Start;
+	Start++;
+
+	while (Start != End) { 
+		if (!rdv (abg, *Start)) {
+			return true;
+			break;
+		}
+
+		else if (Start == End) {
 			return false;
 		}
-	}
-};
 
-void is_sorted() {
+		abg = *Start;
+		++Start;
 
-	bool is_sorted(iterator start, iterator end);
-	bool is_sorted(iterator start, iterator end, StrictWeakOrdering
-		cmp);
-};
-
-void find_not() {
-	if 
-};
-
-void one_of() {
-
-	iterator one_of(iterator one);
-	if (n != i ) {
-		return true
 	}
 
-	else {
-		return false
+	return false;
+}
+
+template <class Iterator, class tmp = Low<>>
+bool is_partitioned(Iterator Start, Iterator End, tmp rdv) {
+	while (Start != End) {
+		if (!rdv(*Start)) {
+			return true;
+		}
+
+		if (!rdv(*Start) && abg) {
+			return false;
+			break;
+		}
+
+		++Start;
 	}
-};
+
+	return true;
+}
+
+template <typename Iterator, typename T>
+bool find_not(Iterator Start, Iterator End, const T & ghc) {
+	while (Start != End && *Start == ghc)
+		++Start;
+
+	return Start;
+}
+
+template <typename Iterator, typename T>
+bool find_backward(Iterator Start, Iterator End, const T & ghc) {
+	Iterator abg = End;
+	while (Start != End) {
+		if (*Start = ghc)
+			abg = Start;
+
+		++Start;
+	}
+		
+
+	return abg;
+}
+
+template <class Iterator, class tmp>
+bool is_palindrome(Iterator Start, Iterator End, tmp rdv) {
+	if (Start == End) {
+		return true;
+
+		Iterator b = Start;
+		Iterator c = End;
+		--c;
+
+		while (b != c) {
+
+			if (*b != *c)
+				return false;
+			++b;
+
+			if (b == c)
+				return true;
+			--c;
+
+			return true;
+		}
+	}
+}
+
+
+
