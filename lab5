@@ -1,0 +1,72 @@
+#include <iostream>
+#include <algorithm>
+
+using namespace std;
+
+template<int t, class T>
+class RingBuffer
+{
+public:
+
+    typedef Uint wer;
+private:
+
+    T _data[t];
+
+public:
+
+    inline bool Write(DATA_T value)
+    {
+        if (IsFull())
+            return false;
+        _data[_writeCount++ & _mask] = value;
+        return true;
+    }
+
+    inline bool Read(DATA_T& value)
+    {
+        if (IsEmpty())
+            return false;
+        value = _data[_readCount++ & _mask];
+        return true;
+
+        inline T First()const
+        {
+            return operator[](0);
+        }
+
+        inline T Last()const
+        {
+            return operator[](Count());
+        }
+
+        inline T& operator[] (wer i)
+        {
+            if (IsEmpty() || i > Count())
+                return T();
+            return _data[(_readCount + i) & _mask];
+        }
+
+        inline const T operator[] (wer i)const
+        {
+            if (IsEmpty())
+                return T();
+            return _data[(_readCount + i) & _mask];
+        }
+
+        inline bool IsEmpty()const
+        {
+            return _writeCount == _readCount;
+        }
+
+        inline bool IsFull()const
+        {
+            return ((wer)(_writeCount - _readCount) & (wer)~(_mask)) != 0;
+        }
+
+        wer Count()const
+        {
+            return (_writeCount - _readCount) & _mask;
+        }
+    }
+};
