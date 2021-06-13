@@ -1,114 +1,180 @@
 #include <iostream>
-#include <cmath>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
-class Point{
+class Point { 
+private:
+	double x;
+	double y;
+
 public:
-    float x = 0,
-    float y = 0;
-    Point():x(0), y(0){};
-    Point(float _x, float _y):x(_x),y(_y){};
-    Point(int _x, int _y):x(_x),y(_y){};
-    Point(const Point &t):x(t.x), y(t.y){};
-    void operator=(const Point &t){
-        x=t.x;
-        y=t.y;
-    };
-    Point operator+(Point &a){
-        Point t;
-        t.x = x+a.x;
-        t.y = y+a.y;
-        return t;
-    };
-    ~Point(){}
+	Point() {
+		x = 0.0;
+		y = 0.0;
+	}
+
+	Point(double valueX, double valueY) 
+		: x(valueX), y(valueY) {}
+
+	Point(const Point& a) 
+		: x(a.GetX()), y(a.GetY()) {}
+
+	Point& operator = (const Point& a) {
+		x = a.GetX();
+		y = a.GetY();
+	}
+
+	void SetX(double valueX) {
+		x = valueX;
+	}
+	void SetY(double valueY) {
+		y = valueY;
+	}
+
+	double GetX() const {
+		return x;
+	}
+
+	double GetY() const {
+		return y;
+	}
+
+	virtual void Print() {
+		cout << "x = " << x << "\n y = " << y << endl;
+	}
 };
-class Broken{
+
+class Broken {
 protected:
-    static float TYER(Point &a, Point &b){
-        return sqrt(pow((a.x-b.x),2)+pow((a.y-b.y),2));
-    }
+	vector <Point> vecBroken;
+
 public:
-    vector<Point> v;
-    Broken()= default;;
-    explicit Broken(vector<Point> &m):v(m){};
-    Broken(Broken &p): v(p.v){};
-    virtual float getLenght(){
-        float t=0;
-        for(int i=0;i<v.size()-1;i++)
-            t+=frompointtopoint(v[i],v[i+1]);
-        return t;
-    };
-    ~Broken()=default;;
-};
-class LockBroken: public Broken{
-public:
-    LockBroken()= default;;
-    LockBroken(vector<Point> &m):Broken(m){};
+	Broken(vector <Point>& a) 
+		: vecBroken(a) {}
 
-    LockBroken(Broken &p):Broken(p){};
-    float getLenght() override{
-        float t=Broken::getLenght();
-        t+=frompointtopoint(v[0],v[v.size()-1]);
-        return t;
-    };
-    ~LockBroken()=default;;
-};
-class polygon{
-public:
-    vector <Point> v;
-    float area{}, perimeter{};
-    explicit polygon(vector<Point> &m):v(m){};
-    polygon(polygon &p):v(p.v){};
+	void Print() {
+		int size = vecBroken.size();
+		for (int i = 0; i < size; i++) {
+			cout << vecBroken[i].GetX() << " " << vecBroken[i].GetY() << endl;
+		}
+	}
 
-    void Area(){
-        for (size_t i = 0; i < v.size(); ++i)
-        {
-            if(i != v.size() - 1)
-                area += (v[i].x * v[i + 1].y - v[i].x * v[i + 1].x);
-            else
-                area += (v[i].x * v[0].y - v[i].y * v[0].x);
-        }
-        area = abs(area)/2;
-        cout << "Площадь = " << area;
-    }
-    void Perimeter(){
-        for (size_t i = 0; i < v.size(); ++i)
-            perimeter+= sqrt(pow(v[i].x - v[i + 1].x, 2) + pow(v[i].y - v[i + 1].y, 2));
-        cout << "Периметр = " << perimeter << endl;
-    }
-};
-class trapezoid{
-public:
-    vector<Point> v;
-    float a, b, c, d;
-    float area, perimeter;
-    void sides(){
-        d = sqrt(pow((v[1].x - v[0].x), 2) + pow((v[1].y - v[0].y), 2));
-        a = sqrt(pow((v[2].x - v[1].x), 2) + pow((v[2].y - v[1].y), 2));
-        c = sqrt(pow((v[2].x- v[3].x), 2) + pow((v[2].y - v[3].y), 2));
-        b = sqrt(pow((v[3].x - v[0].x), 2) + pow((v[3].y - v[0].y), 2));
-    };
+	double Perimetr() {
+		int size = vecBroken.size();
+		double Per;
+		for (int i = 0; i < size - 1; i++) {
+			double a = vecBroken[i + 1].GetX() - vecBroken[i].GetX();
+			double b = vecBroken[i + 1].GetY() - vecBroken[i].GetY();
+			Per = sqrt(pow(a, 2) + pow(b, 2));
+		}
+		return Per;
+	}
 
-    explicit trapezoid(vector<Point> arr){
-        for (size_t i = 0; i < 4; ++i){
-            cout << arr[i].x << ' ' << arr[i].y << endl;
-            v.push_back(arr[i]);
-            sides();
-        }
-    };
-
-    void Area(){
-        area = (a+b)/2*sqrt(pow(c,2)-pow((pow(b-a,2)+pow(c,2)-pow(d,2), 2)/2*(b-a), 2));
-        cout << "Площадь =" << area <<endl;
-    };
-
-    void Perimeter(){
-        perimeter = a + b + c + d;
-        cout << "Периметр = " << endl;
-    };
+	~Broken() {
+		vecBroken.clear();
+	}
 };
 
-class Triangle: public polygon{};
-class RegularPolygon: public polygon{};
+class CloseBroken : public Broken {
+public:
+	CloseBroken(vector <Point>& a) 
+		: Broken (a) {}
+
+	double Perimeter() {
+		int size = vecBroken.size();
+		double Per;
+		for (int i = 0; i < size; i++) {
+			double a = vecBroken[i + 1].GetX() - vecBroken[i].GetX();
+			double b = vecBroken[i + 1].GetY() - vecBroken[i].GetY();
+			Per = sqrt(pow(a, 2) + pow(b, 2));
+		}
+		return Per;
+	}
+};
+
+class Polygon {
+protected:
+	vector <Point> vecPoly;
+
+public:
+
+	Polygon() = default;
+
+	Polygon(vector <Point>& a)
+		: vecPoly(a) {};
+
+	void PrintPolyc() {
+		int size = vecPoly.size();
+		for (int i = 0; i < size; i++) {
+			cout << vecPoly[i].GetX() << " " << vecPoly[i].GetY() << "\n";
+		}
+		cout << endl;
+	}
+
+	double Perimeter() {
+		int size = vecPoly.size();
+		double Per;
+		for (int i = 0; i < size; i++) {
+			double a = vecPoly[i + 1].GetX() - vecPoly[i].GetX();
+			double b = vecPoly[i + 1].GetY() - vecPoly[i].GetY();
+			Per = sqrt(pow(a, 2) + pow(b, 2));
+		}
+		return Per;
+	}
+
+	double Square() {
+		double piece3;
+		double S = 0;
+
+		int size = vecPoly.size();
+		for (int i = 0; i < size - 1; ++i) {
+			double piece1 = vecPoly[i].GetX() * vecPoly[i + 1].GetY();
+			double piece2 = vecPoly[i + 1].GetX() * vecPoly[i].GetY();
+			piece3 = piece1 - piece2;
+		}
+		S = 0.5 * abs(piece3 + vecPoly[size - 1].GetX() * vecPoly[0].GetY() - vecPoly[0].GetX() * vecPoly[size - 1].GetX());
+		return S;
+	}
+};
+
+class Triangle : public Polygon {
+public:
+	Triangle() = default;
+	Triangle(vector<Point>& points) {
+		if (points.size() != 3) {
+			cout << "Not 3 points!";
+		}
+	}
+};
+
+class Trapezoid : public Polygon {
+public:
+	Trapezoid() = default;
+};
+
+class RightPolygon : public Polygon {
+public:
+	RightPolygon() = default;
+};
+
+
+int main() {
+	Point p1(12, 13);
+	Point p2 = p1;
+	p1.Print();
+	p2.Print();
+	vector <Point> brok = {{1, 1},{5, 5},{7, 1}};
+	Broken m1(brok);
+	m1.Print();
+	vector <Point> brok2 = { {1, 1},{5, 5},{7, 1} };
+	CloseBroken m2(brok2);
+	m2.Print();
+	vector <Point> brok3 = { {0,0},{0,1},{1,1},{2,0.5},{1,0} };
+	Polygon m4(brok3);
+	cout << m4.Square();
+
+
+	return 0;
+}
