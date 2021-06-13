@@ -7,7 +7,7 @@ class Polynom {
 public:
     unordered_map <int, float> polynom;
     Polynom() = default;
-    explicit Polynom(unordered_map <int, float> vect) : polynom(move(vect)) {}
+    explicit Polynom(unordered_map <int, float> vect) : polynom(std::move(vect)) {}
     Polynom(const Polynom& get) = default;
 
     Polynom & operator = (const Polynom& get) {
@@ -25,22 +25,22 @@ public:
     }
 
 
-    Polynom operator += (Polynom & polynom) {
+    Polynom& operator += (const Polynom & polynom) {
         for (auto i : polynom.polynom)
             this->polynom[i.first] += polynom.polynom[i.first];
         return *this;
     }
-    Polynom operator +(Polynom & polynom) {
+    Polynom operator +(const Polynom & polynom) {
         Polynom pol(*this);
         pol += polynom;
         return pol;
     }
-    Polynom operator -= (Polynom& polynom) {
+    Polynom& operator -= (const Polynom& polynom) {
         for (auto i : polynom.polynom)
             this->polynom[i.first] -= polynom.polynom[i.first];
         return *this;
     }
-    Polynom operator -(Polynom & polynom_) {
+    Polynom operator -(const Polynom & polynom_) {
         Polynom g(*this);
         g-=polynom_;
         return g;
@@ -60,27 +60,27 @@ public:
         return y;
     }
 
-    Polynom operator*=(const float t){
+    Polynom& operator*=(const float t){
         for (auto& i : this->polynom)
             i.second *= t;
         return *this;
      }
 
-    Polynom operator/=(const float t){
+    Polynom& operator/=(const float t){
         for (auto& i : this->polynom)
             i.second /= t;
         return *this;
     };
 
-    float operator [] (int i) {
+    float& operator [] (int i) {
         return polynom[i];
     }
 
-    friend Polynom operator * (Polynom& polynom1, Polynom& polynom2);
+    friend Polynom operator * (const Polynom& polynom1,const Polynom& polynom2);
     ~Polynom() = default;
 };
 
-Polynom operator * (Polynom& polynom1, Polynom& polynom2) {
+Polynom operator * (const Polynom& polynom1, const Polynom& polynom2) {
     unordered_map <int, float> _polynom;
     for (auto i : polynom1.polynom)
         for (auto j : polynom2.polynom)
@@ -89,7 +89,7 @@ Polynom operator * (Polynom& polynom1, Polynom& polynom2) {
     return polynom_new;
 }
 
-ostream& operator << (ostream& stream, Polynom& pol)
+ostream& operator << (ostream& stream, const Polynom& pol)
 {
     for (auto i : pol.polynom) {
         if (pol.polynom[i.first] != 0)
