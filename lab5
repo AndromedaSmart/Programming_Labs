@@ -1,72 +1,254 @@
 #include <iostream>
+#include <string>
 #include <algorithm>
 
 using namespace std;
 
-template<int t, class T>
-class RingBuffer
-{
-public:
+template<typename T>
 
-    typedef Uint wer;
+class CircleBuffer {
 private:
+    size_t head = 0;
+    size_t tail = 0;
+    size_t capacity;
+    size_t size = 0;
+    T *data;
 
-    T _data[t];
+    class BufferIterator {
+    private:
+        T *iterator;
+        T *data;
+        size_t tail_it;
+        size_t index;
+        size_t capacity;
+    public:
+        using iterator_category [[maybe_unused]] = random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = ptrdiff_t;
+        using pointer [[maybe_unused]] = value_type *;
+        using reference [[maybe_unused]] = value_type &;
+
+        BufferIterator(T *it, T *buffer, size_t tail, size_t index, size_t capacity) : iterator(it), data(buffer),
+                                                                                       tail_it(tail), index(index),
+                                                                                       capacity(capacity) {}
+
+        BufferIterator(const BufferIterator &other) : iterator(other.iterator), data(other.data), tail_it(other.tail_it),
+                                                      index(other.index), capacity(other.capacity) {}
+
+        T &operator*() const { return data[(tail_it + capacity - index) % capacity]; }
+
+        T *operator->() const { return iterator; }
+
+        T &operator[](difference_type i) const { return iterator[i]; }
+
+        BufferIterator &operator++() {
+            iterator++;
+            index++;
+            return *this;
+        }
+
+        BufferIterator operator++(T) {
+            BufferIterator tmp(*this);
+            iterator++;
+            index++;
+            return tmp;
+        }
+
+        BufferIterator &operator--() {
+            iterator--;
+            index--;
+            return *this;
+        }
+
+        BufferIterator operator--(T) {
+            BufferIterator tmp(*this);
+            iterator--;
+            index--;
+            return tmp;
+        }
+
+        BufferIterator &operator+=(difference_type it) {
+            iterator += it;
+            index += it;
+            return *this;
+        }
+
+        BufferIterator &operator-=(difference_type it) {
+            iterator -= it;
+            index -= it;
+            return *this;
+        }
+
+        BufferIterator operator+(difference_type it) const {
+            return BufferIterator(iterator + it, data, tail_it, index + it, capacity);
+        }
+
+        difference_type operator-(const BufferIterator &it) const { return iterator - it.iterator; }
+
+        BufferIterator operator-(difference_type it) const {
+            return BufferIterator(iterator - it, data, tail_it, index - it, capacity);
+        }
+
+        bool operator==(const BufferIterator &other) const { return iterator == other.iterator; }
+
+        bool operator!=(const BufferIterator &other) const { return iterator != other.iterator; }
+
+        bool operator>(const BufferIterator &other) const { return iterator > other.iterator; }
+
+        bool operator<(const BufferIterator &other) const { return iterator < other.iterator; }
+
+        bool operator>=(const BufferIterator &other) const { return iterator >= other.iterator; }
+
+        bool operator<=(const BufferIterator &other) const { return iterator <= other.iterator; }
+    };
 
 public:
+    explicit CircleBuffer(size_t any_capacity) : data(new T[any_capacity]), capacity(any_capacity) {}
 
-    inline bool Write(DATA_T value)
-    {
-        if (IsFull())
-            return false;
-        _data[_writeCount++ & _mask] = value;
-        return true;
+    void push_back(T any_data) { // Добавление элементов в начало
+        if (size != capacity) {
+            data[tail] = any_data;
+            tail = (tail + 1) % capacity;    // Создаём закольцованность
+            size++;
+        } else {
+            data[tail] = any_data;
+            head = (head + 1) % capacity;
+            tail = (tail + 1) % capacity;
+        }
     }
 
-    inline bool Read(DATA_T& value)
-    {
-        if (IsEmpty())
-            return false;
-        value = _data[_readCount++ & _mask];
-        return true;
+    void delete_back() { // Удаление элементов из начала
+        if (size != 0) {
+            size--;
+            tail = (tail - 1 + capacity) % capacity; // Закольцованность декремента
+        } else throw out_of_range("Buffer is empty");
+    }
 
-        inline T First()const
-        {
-            return operator[](0);
-        }
+    void push_front(T any_data) { // Добавить константность и ссылки
+        if (size != capacity) {
+            head = (head + capacity - 1) % capacity;
+            data[head] = any_data;
+            size++;
+        } else data[head] = any_data;
+    }
 
-        inline T Last()const
-        {
-            return operator[](Count());
-        }
+    void delete_front() { // Добавить константность и ссылки
+        if (size != 0) {
+            size--;
+            head = (head + 1) % capacity; // Закольцованность инкремента
+        } else throw out_of_range("Buffer is empty");
+    }
 
-        inline T& operator[] (wer i)
-        {
-            if (IsEmpty() || i > Count())
-                return T();
-            return _data[(_readCount + i) & _mask];
-        }
+    T first() { // Добавить константность и ссылки
+        if (size != 0)
+            return data[(tail - 1 + capacity) % capacity];
+        else throw out_of_range("Buffer is empty"); // Выводим первый элемент
+    }
 
-        inline const T operator[] (wer i)const
-        {
-            if (IsEmpty())
-                return T();
-            return _data[(_readCount + i) & _mask];
-        }
+    T last() { // Добавить константность и ссылки
+        if (size != 0)
+            return data[head];
+        else throw out_of_range("Buffer is empty"); // Выводим последний элемент
+    }
 
-        inline bool IsEmpty()const
-        {
-            return _writeCount == _readCount;
+    T &operator[](long long index) {
+        if (size == 0)
+            throw out_of_range("Buffer is empty");
+        else if (index < 0)
+            throw out_of_range("Index can't be negative");
+        else if (index >= size) {
+            string str = "Index out of range, asking for " + to_string(index) + ", max index " + to_string(size - 1);
+            throw out_of_range(str);
         }
+        return data[(tail + capacity - 1 - index) % capacity]; // Оператор разыменования
+    }
 
-        inline bool IsFull()const
-        {
-            return ((wer)(_writeCount - _readCount) & (wer)~(_mask)) != 0;
+    T operator[](long long index) const {
+        if (size == 0)
+            throw out_of_range("Buffer is empty");
+        else if (index < 0)
+            throw out_of_range("Index can't be negative");
+        else if (index >= size) {
+            string str = "Index out of range, asking for " + to_string(index) + ", max index " + to_string(size - 1);
+            throw out_of_range(str);
         }
+        return data[(tail + capacity - 1 - index) % capacity];
+    }
 
-        wer Count()const
-        {
-            return (_writeCount - _readCount) & _mask;
-        }
+    void change_capacity(long long new_capacity) {
+        if (new_capacity < capacity)
+            throw bad_alloc();
+        if (new_capacity < 0)
+            throw out_of_range("Can't be negative");
+        T *new_data = new T[new_capacity];
+        int temp = 0;
+        if (head >= tail) {
+            for (int i = head; i < capacity; ++i) {
+                new_data[temp] = data[i];
+                temp++;
+            }
+            for (int i = 0; i < tail; ++i) {
+                new_data[temp] = data[i];
+                temp++;
+            }
+        } else
+            for (int i = head; i < tail; ++i) {
+                new_data[temp] = data[i];
+                temp++;
+            }
+        delete[] data;
+        data = new_data;
+        capacity = new_capacity;
+        head = 0;
+        tail = size;
+    }
+
+    BufferIterator begin(){
+        return BufferIterator(data, data, (tail + capacity - 1) % capacity, 0, capacity);
+    }
+
+    BufferIterator end(){
+        return BufferIterator(&data[size], data, (tail + capacity - 1) % capacity, size, capacity);
     }
 };
+
+
+int main() {
+    CircleBuffer<int> cb(4);
+    cb.push_front(4);
+    cb.push_front(3);
+    cb.push_front(2);
+    cb.push_front(1);
+
+    cout << cb[0] << " " << cb[1] << " " << cb[2] << " " << cb[3] << endl;
+
+    sort(cb.begin(), cb.end());
+    for (int & a : cb) {
+        cout << a << " ";
+    }
+    cout << endl;
+    cb.delete_back();
+    cb.delete_front();
+    for (int & a : cb) {
+        cout << a << " ";
+    }
+    cout << endl;
+    cb.push_back(1);
+    cb.push_front(4);
+    cout << cb.first() << " " << cb.last() << endl;
+    cb.change_capacity(6);
+    cb.push_front(5);
+    cout << cb[4] << endl;
+    cb.push_front(6);
+    for (int & a : cb) {
+        cout << a << " ";
+    }
+    cout << endl;
+    try {
+        cb[6] = 1;
+        throw "out of range";
+    }
+    catch (const exception& e) {
+        cerr << e.what() << endl;
+    }
+}
