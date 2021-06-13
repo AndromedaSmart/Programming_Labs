@@ -7,7 +7,7 @@ class Polynom {
 public:
     unordered_map <int, float> polynom;
     Polynom() = default;
-    explicit Polynom(unordered_map <int, float> vect) : polynom(std::move(vect)) {}
+    explicit Polynom(const unordered_map <int, float>& vect) : polynom(vect) {}
     Polynom(const Polynom& get) = default;
 
     Polynom & operator = (const Polynom& get) {
@@ -30,7 +30,7 @@ public:
             this->polynom[i.first] += polynom.polynom[i.first];
         return *this;
     }
-    Polynom operator +(const Polynom & polynom) {
+    Polynom operator +(const Polynom & polynom) const{
         Polynom pol(*this);
         pol += polynom;
         return pol;
@@ -40,20 +40,20 @@ public:
             this->polynom[i.first] -= polynom.polynom[i.first];
         return *this;
     }
-    Polynom operator -(const Polynom & polynom_) {
+    Polynom operator -(const Polynom & polynom_) const{
         Polynom g(*this);
         g-=polynom_;
         return g;
     }
 
-    Polynom operator*(const float t){
+    Polynom operator*(const float t) const{
         Polynom y(*this);
         for (auto& i : y.polynom)
             i.second *= t;
         return y;
     }
 
-    Polynom operator/(const float t){
+    Polynom operator/(const float t) const{
         Polynom y(*this);
         for (auto& i : y.polynom)
             i.second /= t;
@@ -64,7 +64,7 @@ public:
         for (auto& i : this->polynom)
             i.second *= t;
         return *this;
-     }
+    }
 
     Polynom& operator/=(const float t){
         for (auto& i : this->polynom)
@@ -75,12 +75,14 @@ public:
     float& operator [] (int i) {
         return polynom[i];
     }
-
+    float& operator [] (int i) const{
+        return polynom[i];
+    }
     friend Polynom operator * (const Polynom& polynom1,const Polynom& polynom2);
     ~Polynom() = default;
 };
 
-Polynom operator * (const Polynom& polynom1, const Polynom& polynom2) {
+Polynom operator * (const Polynom& polynom1, const Polynom& polynom2){
     unordered_map <int, float> _polynom;
     for (auto i : polynom1.polynom)
         for (auto j : polynom2.polynom)
