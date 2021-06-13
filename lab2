@@ -1,98 +1,89 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <unordered_map>
+
 using namespace std;
 
-class Polynom{
+class Polynom {
 public:
     unordered_map <int, float> polynom;
-    Polynom()= default;
-    Polynom(unordered_map <int, float> vect): polynom(std::move(vect)){}
-    Polynom (const Polynom& get)= default;
+    Polynom() = default;
+    explicit Polynom(unordered_map <int, float> vect) : polynom(move(vect)) {}
+    Polynom(const Polynom& get) = default;
 
-    Polynom& operator = (const Polynom& get){
+    Polynom & operator = (const Polynom& get) {
         if (&get == this)
             return *this;
         polynom = get.polynom;
         return *this;
     }
-
-    bool operator == (const Polynom& pol2) const{
+    bool operator == (const Polynom& pol2) const {
         return polynom == pol2.polynom;
     }
 
-    bool operator != (const Polynom& pol2) const{
+    bool operator != (const Polynom& pol2) const {
         return !(polynom == pol2.polynom);
     }
 
-    const Polynom& operator+() const{
-        return *this;
-    }
 
-    Polynom operator - (Polynom get){
-        for (auto i: get.polynom)
-            get.polynom[i.first] = -get.polynom[i.first];
-        return get;
-    }
-    void operator *= (Polynom& polynom){
-        *this = *this * polynom;
-    }
-    Polynom operator + (Polynom& polynom){
-        for (auto i: polynom.polynom)
+    Polynom operator += (Polynom & polynom) {
+        for (auto i : polynom.polynom)
             this->polynom[i.first] += polynom.polynom[i.first];
         return *this;
     }
-    Polynom operator - (Polynom& polynom){
-        for (auto i: polynom.polynom)
+    Polynom operator +(Polynom & polynom) {
+        Polynom pol(*this);
+        pol += polynom;
+        return pol;
+    }
+    Polynom operator -= (Polynom& polynom) {
+        for (auto i : polynom.polynom)
             this->polynom[i.first] -= polynom.polynom[i.first];
         return *this;
     }
-
-    void operator += (Polynom& polynom){
-        *this = *this + polynom;
+    Polynom operator -(Polynom & polynom_) {
+        Polynom g(*this);
+        g-=polynom_;
+        return g;
     }
 
-    void operator -= (Polynom& polynom){
-        for (auto i: polynom.polynom)
-            polynom.polynom[i.first] = -polynom.polynom[i.first];
-        *this = *this +polynom;
-    }
-
-    Polynom operator*(const float t) {
+    Polynom operator*(const float t){
         Polynom y(*this);
-        for (auto & i : y.polynom)
+        for (auto& i : y.polynom)
             i.second *= t;
         return y;
     }
 
-    Polynom operator/(const float t) {
+    Polynom operator/(const float t){
         Polynom y(*this);
-        for (auto & i : y.polynom)
+        for (auto& i : y.polynom)
             i.second /= t;
         return y;
     }
 
-    Polynom& operator*=(const float t) {
-        for (auto & i : this->polynom)
+    Polynom operator*=(const float t){
+        for (auto& i : this->polynom)
             i.second *= t;
         return *this;
-    }
+     }
 
-    Polynom& operator/=(const float t){
-        for (auto & i : this->polynom)
+    Polynom operator/=(const float t){
+        for (auto& i : this->polynom)
             i.second /= t;
         return *this;
     };
 
-    float operator [] (int i){
+    float operator [] (int i) {
         return polynom[i];
     }
-    friend Polynom operator * (Polynom &polynom1, Polynom &polynom2);
-    ~Polynom()= default;
+
+    friend Polynom operator * (Polynom& polynom1, Polynom& polynom2);
+    ~Polynom() = default;
 };
 
-Polynom operator * (Polynom& polynom1, Polynom& polynom2){
+Polynom operator * (Polynom& polynom1, Polynom& polynom2) {
     unordered_map <int, float> _polynom;
-    for (auto i: polynom1.polynom)
-        for (auto j: polynom2.polynom)
+    for (auto i : polynom1.polynom)
+        for (auto j : polynom2.polynom)
             _polynom[i.first + j.first] += polynom1.polynom[i.first] * polynom2.polynom[j.first];
     Polynom polynom_new(_polynom);
     return polynom_new;
@@ -100,7 +91,7 @@ Polynom operator * (Polynom& polynom1, Polynom& polynom2){
 
 ostream& operator << (ostream& stream, Polynom& pol)
 {
-    for (auto i: pol.polynom){
+    for (auto i : pol.polynom) {
         if (pol.polynom[i.first] != 0)
         {
             if (pol.polynom[i.first] < 0)
@@ -109,7 +100,7 @@ ostream& operator << (ostream& stream, Polynom& pol)
                 stream << "+" << pol.polynom[i.first] << "X^" << i.first;
         }
     }
-    cout <<endl;
+    cout << endl;
     return stream;
 }
 
